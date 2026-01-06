@@ -41,7 +41,7 @@
   });
 
   // --- Player ---
-  const playerGeo = new THREE.BoxGeometry(1, 1, 1);
+  const playerGeo = new THREE.BoxGeometry(1, 9, 1);
   const playerMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
   const player = new THREE.Mesh(playerGeo, playerMat);
   scene.add(player);
@@ -49,7 +49,7 @@
 
   // --- Obstacles ---
   let obstacles = [];
-  const spawnInterval = 100;
+  const spawnInterval = 1000;
   let spawnTimer = 0;
 
   // --- Score ---
