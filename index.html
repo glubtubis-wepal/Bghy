@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile 3D Dodge Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    canvas { display: block; }
+    #ui {
+      position: absolute; top: 10px; left: 10px;
+      color: white; font-size: 24px;
+    }
+    #restartBtn {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 10px 20px; font-size: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">Score: 0</div>
+<button id="restartBtn">Restart</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+  // --- Scene Setup ---
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.z = 10;
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // --- Player ---
+  const playerGeo = new THREE.BoxGeometry(1, 1, 1);
+  const playerMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const player = new THREE.Mesh(playerGeo, playerMat);
+  scene.add(player);
+  player.position.y = -4;
+
+  // --- Obstacles ---
+  let obstacles = [];
+  const spawnInterval = 1000;
+  let spawnTimer = 0;
+
+  // --- Score ---
+  let score = 0;
+  const scoreDiv = document.getElementById('ui');
+
+  // --- Game State ---
+  let gameOver = false;
+  const restartBtn = document.getElementById('restartBtn');
+
+  restartBtn.addEventListener('click', () => {
+    restartGame();
+  });
+
+  // --- Touch Controls ---
+  let touchX = 0;
+  window.addEventListener('touchstart', e => {
+    touchX = e.touches[0].clientX;
+  });
+
+  window.addEventListener('touchmove', e => {
+    const deltaX = e.touches[0].clientX - touchX;
+    player.position.x += deltaX * 0.02; // adjust speed
+    // clamp to screen edges
+    player.position.x = Math.max(Math.min(player.position.x, 4), -4);
+    touchX = e.touches[0].clientX;
+  });
+
+  // --- Spawn Obstacles ---
+  function spawnObstacle() {
+    const size = 0.8 + Math.random() * 0.5;
+    const geo = new THREE.BoxGeometry(size, size, size);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const obs = new THREE.Mesh(geo, mat);
+    obs.position.x = (Math.random() - 0.5) * 8;
+    obs.position.y = 6;
+    obs.userData.size = size;
+    scene.add(obs);
+    obstacles.push(obs);
+  }
+
+  // --- Restart Game ---
+  function restartGame() {
+    // reset player
+    player.position.x = 0;
+    // remove obstacles
+    obstacles.forEach(o => scene.remove(o));
+    obstacles = [];
+    // reset score
+    score = 0;
+    scoreDiv.innerText = `Score: ${score}`;
+    gameOver = false;
+    restartBtn.style.display = 'none';
+    spawnTimer = 0;
+  }
+
+  // --- Collision Check ---
+  function checkCollision(a, b) {
+    const dx = Math.abs(a.position.x - b.position.x);
+    const dy = Math.abs(a.position.y - b.position.y);
+    const sizeA = 1; // player size
+    const sizeB = b.userData.size;
+    return dx < (sizeA + sizeB)/2 && dy < (sizeA + sizeB)/2;
+  }
+
+  // --- Animation Loop ---
+  function animate(timestamp) {
+    if (!gameOver) {
+      requestAnimationFrame(animate);
+
+      // spawn obstacles
+      spawnTimer += 16;
+      if (spawnTimer > spawnInterval) {
+        spawnObstacle();
+        spawnTimer = 0;
+      }
+
+      // move obstacles
+      obstacles.forEach((obs, i) => {
+        obs.position.y -= 0.08;
+
+        // collision
+        if (checkCollision(player, obs)) {
+          gameOver = true;
+          restartBtn.style.display = 'block';
+        }
+
+        // off screen
+        if (obs.position.y < -6) {
+          scene.remove(obs);
+          obstacles.splice(i, 1);
+          score += 1;
+          scoreDiv.innerText = `Score: ${score}`;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+  }
+
+  animate();
+</script>
+</body>
+</html>
