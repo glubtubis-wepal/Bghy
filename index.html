@@ -49,7 +49,7 @@
 
   // --- Obstacles ---
   let obstacles = [];
-  const spawnInterval = 1000;
+  const spawnInterval = 100;
   let spawnTimer = 0;
 
   // --- Score ---
@@ -82,7 +82,7 @@
   function spawnObstacle() {
     const size = 0.8 + Math.random() * 0.5;
     const geo = new THREE.BoxGeometry(size, size, size);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff0009 });
     const obs = new THREE.Mesh(geo, mat);
     obs.position.x = (Math.random() - 0.5) * 8;
     obs.position.y = 6;
